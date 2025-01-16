@@ -66,7 +66,6 @@ class NetworkAttachmentDefinition(NamespacedResource):
             config (NetConfig): Configuration body, as defined by the CNI spec.
             resource_name (str): Optional resource name marking
                 (set on the object annotations).
-                (defaults to 10sec).
             client: (DynamicClient): Optional DynamicClient to use.
         """
         super().__init__(
