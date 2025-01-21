@@ -110,7 +110,7 @@ def start_nc_response_on_vm(flat_l2_port, vm, num_connections):
         ],
         verify_commands_output=False,
     )
-    fetch_pid_from_linux_vm(vm=vm, process_name="nc", exact_match=True)
+    fetch_pid_from_linux_vm(vm=vm, process_name="nc")
 
 
 def is_port_number_available(

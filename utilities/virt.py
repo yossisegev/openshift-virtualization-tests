@@ -2258,11 +2258,10 @@ def start_and_fetch_processid_on_linux_vm(vm, process_name, args="", use_nohup=F
     return fetch_pid_from_linux_vm(vm=vm, process_name=process_name)
 
 
-def fetch_pid_from_linux_vm(vm, process_name, exact_match=False):
-    match_arg = "-x " if exact_match else ""
+def fetch_pid_from_linux_vm(vm, process_name):
     cmd_res = run_ssh_commands(
         host=vm.ssh_exec,
-        commands=shlex.split(f"pgrep {process_name} {match_arg}|| true"),
+        commands=shlex.split(f"pgrep {process_name} -x || true"),
     )[0].strip()
     assert cmd_res, f"VM {vm.name}, '{process_name}' process not found"
     return int(cmd_res)
