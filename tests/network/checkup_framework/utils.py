@@ -262,9 +262,9 @@ def wait_for_job_failure(job):
         )
         for sample in job_status:
             for condition in sample:
-                if condition["type"] == job.Status.FAILED and condition["status"] == job.Condition.Status.TRUE:
+                if condition["type"] == job.Status.FAILED:
                     return
-                if condition["type"] == job.Status.SUCCEEDED and condition["status"] == job.Condition.Status.TRUE:
+                if condition["type"] == job.Status.SUCCEEDED:
                     raise ResourceValueError(f"Job {job.name} has succeeded and should have failed.")
     except TimeoutExpiredError:
         for status in job_status:
