@@ -13,9 +13,7 @@ from tests.network.checkup_framework.utils import (
 pytestmark = pytest.mark.usefixtures("framework_resources")
 
 CNCF_IO_RESOURCE = Resource.ApiGroup.K8S_CNI_CNCF_IO
-CONNECTIVITY_ISSUE_ERROR_REGEX_MESSAGE = (
-    "run: ping parser: no connectivity - 100% packet loss"
-)
+CONNECTIVITY_ISSUE_ERROR_REGEX_MESSAGE = "run: ping parser: no connectivity - 100% packet loss"
 CONDITION_TIMEOUT_REGEX_MESSAGE = (
     r"setup: failed to wait for VMI 'test-checkup-framework/latency-check-target-.*' IP address to "
     "appear on status: timed out waiting for the condition"
