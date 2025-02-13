@@ -16,14 +16,12 @@ from tests.network.utils import get_vlan_index_number, vm_for_brcnv_tests
 from utilities.constants import (
     CLUSTER,
     CLUSTER_NETWORK_ADDONS_OPERATOR,
-    IPV4_STR,
-    IPV6_STR,
     ISTIO_SYSTEM_DEFAULT_NS,
     OVS_BRIDGE,
     VIRT_HANDLER,
 )
 from utilities.infra import ExecCommandOnPod, get_deployment_by_name, get_node_selector_dict
-from utilities.network import get_cluster_cni_type, ip_version_data_from_matrix, network_nad
+from utilities.network import get_cluster_cni_type, network_nad
 
 
 @pytest.fixture(scope="session")
