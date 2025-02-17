@@ -125,6 +125,10 @@ class BridgeNodeNetworkConfigurationPolicy(NodeNetworkConfigurationPolicy):
         self.bridge_type = bridge_type
         self.stp_config = stp_config
 
+    def wait_for_status_success(self):
+        time.sleep(10)
+        super().wait_for_status_success()
+
     @staticmethod
     def _does_port_match_type(nns, port_name, port_type):
         # From time to time the NNS interfaces take longer to get updated with the new port
@@ -377,6 +381,10 @@ class VLANInterfaceNodeNetworkConfigurationPolicy(NodeNetworkConfigurationPolicy
         self.iface.update(vlan_spec)
         super().to_dict()
 
+    def wait_for_status_success(self):
+        time.sleep(10)
+        super().wait_for_status_success()
+
 
 class BondNodeNetworkConfigurationPolicy(NodeNetworkConfigurationPolicy):
     def __init__(
@@ -462,6 +470,10 @@ class BondNodeNetworkConfigurationPolicy(NodeNetworkConfigurationPolicy):
 
             if self.mtu:
                 self.configure_mtu_on_ports()
+
+    def wait_for_status_success(self):
+        time.sleep(10)
+        super().wait_for_status_success()
 
 
 NETWORK_DEVICE_TYPE = {
@@ -640,6 +652,10 @@ class EthernetNetworkConfigurationPolicy(NodeNetworkConfigurationPolicy):
                 }
                 self.set_interface(interface=self.iface)
                 super().to_dict()
+
+    def wait_for_status_success(self):
+        time.sleep(10)
+        super().wait_for_status_success()
 
 
 def sriov_network_dict(namespace, network):
