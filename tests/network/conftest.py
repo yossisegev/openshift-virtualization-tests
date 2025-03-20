@@ -263,7 +263,6 @@ def network_sanity(
                 LOGGER.info(f"Cluster supports jumbo frame tests with an MTU of {cluster_network_mtu}")
 
     _verify_multi_nic()
-    _verify_dpdk()
     _verify_service_mesh()
     _verify_jumbo_frame()
 
