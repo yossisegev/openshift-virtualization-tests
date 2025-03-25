@@ -97,6 +97,7 @@ def test_connectivity_over_pod_ipv4_network(
 @pytest.mark.gating
 @pytest.mark.polarion("CNV-11845")
 def test_connectivity_over_pod_ipv6_network(
+    skip_if_cnv_58529_is_affecting,
     fail_if_not_ipv6_supported_cluster_from_mtx,
     pod_net_vma,
     pod_net_vmb,

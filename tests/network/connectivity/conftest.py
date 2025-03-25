@@ -2,7 +2,7 @@ import pytest
 
 from tests.network.connectivity.utils import create_running_vm
 from utilities.constants import LINUX_BRIDGE, OVS_BRIDGE
-from utilities.infra import get_node_selector_dict, name_prefix
+from utilities.infra import ClusterHosts, get_node_selector_dict, is_jira_open, name_prefix
 from utilities.network import network_device, network_nad
 
 
@@ -342,3 +342,9 @@ def vm_ovs_bridge_attached_vmb_destination(
         client=unprivileged_client,
         namespace=namespace,
     )
+
+
+@pytest.fixture(scope="package")
+def skip_if_cnv_58529_is_affecting(workers_type):
+    if is_jira_open(jira_id="CNV-58529") and workers_type == ClusterHosts.Type.VIRTUAL:
+        pytest.skip("This IPv6 test cannot be executed on a virtual cluster yet.")

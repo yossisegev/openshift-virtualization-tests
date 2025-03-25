@@ -52,6 +52,7 @@ class TestConnectivityLinuxBridge:
     @pytest.mark.ipv6
     def test_ipv6_linux_bridge(
         self,
+        skip_if_cnv_58529_is_affecting,
         fail_if_not_ipv6_supported_cluster,
         nad_linux_bridge,
         vm_linux_bridge_attached_vma_source,
@@ -146,6 +147,7 @@ class TestConnectivityOVSBridge:
     @pytest.mark.ipv6
     def test_ipv6_ovs_bridge(
         self,
+        skip_if_cnv_58529_is_affecting,
         fail_if_not_ipv6_supported_cluster,
         nad_ovs_bridge,
         vm_ovs_bridge_attached_vma_source,
