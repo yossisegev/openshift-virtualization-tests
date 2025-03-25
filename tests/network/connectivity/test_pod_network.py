@@ -4,12 +4,13 @@ VM to VM connectivity
 
 import pytest
 
+from tests.network.connectivity.utils import verify_vm_connectivity_over_pod_network
+from utilities.constants import IPV4_STR, IPV6_STR
 from utilities.infra import get_node_selector_dict
 from utilities.network import (
     compose_cloud_init_data_dict,
-    get_ip_from_vm_or_virt_handler_pod,
 )
-from utilities.virt import VirtualMachineForTests, fedora_vm_body, running_vm, vm_console_run_commands
+from utilities.virt import VirtualMachineForTests, fedora_vm_body, running_vm
 
 
 @pytest.fixture()
@@ -75,10 +76,8 @@ def cloud_init_ipv6_network_data(dual_stack_network_data):
 
 @pytest.mark.gating
 @pytest.mark.polarion("CNV-2332")
-def test_connectivity_over_pod_network(
+def test_connectivity_over_pod_ipv4_network(
     fail_if_not_ipv4_supported_cluster_from_mtx,
-    fail_if_not_ipv6_supported_cluster_from_mtx,
-    ip_stack_version_matrix__module__,
     pod_net_vma,
     pod_net_vmb,
     pod_net_running_vma,
@@ -88,8 +87,28 @@ def test_connectivity_over_pod_network(
     """
     Check connectivity
     """
-    dst_ip = get_ip_from_vm_or_virt_handler_pod(family=ip_stack_version_matrix__module__, vm=pod_net_running_vmb)
-    assert dst_ip, f"Cannot get valid IP address from {pod_net_running_vmb.vmi.name}."
+    verify_vm_connectivity_over_pod_network(
+        ip_family=IPV4_STR,
+        src_vm=pod_net_running_vma,
+        dst_vm=pod_net_running_vmb,
+    )
 
-    ping_cmd = f"ping -c 3 {dst_ip}"
-    vm_console_run_commands(vm=pod_net_running_vma, commands=[ping_cmd])
+
+@pytest.mark.gating
+@pytest.mark.polarion("CNV-11845")
+def test_connectivity_over_pod_ipv6_network(
+    fail_if_not_ipv6_supported_cluster_from_mtx,
+    pod_net_vma,
+    pod_net_vmb,
+    pod_net_running_vma,
+    pod_net_running_vmb,
+    namespace,
+):
+    """
+    Check connectivity
+    """
+    verify_vm_connectivity_over_pod_network(
+        ip_family=IPV6_STR,
+        src_vm=pod_net_running_vma,
+        dst_vm=pod_net_running_vmb,
+    )

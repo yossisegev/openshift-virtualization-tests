@@ -5,7 +5,7 @@ from utilities.network import (
     compose_cloud_init_data_dict,
     get_ip_from_vm_or_virt_handler_pod,
 )
-from utilities.virt import VirtualMachineForTests, fedora_vm_body, running_vm
+from utilities.virt import VirtualMachineForTests, fedora_vm_body, running_vm, vm_console_run_commands
 
 
 def create_running_vm(
@@ -57,3 +57,11 @@ def get_masquerade_vm_ip(vm, ipv6_testing):
     if ipv6_testing:
         return get_ip_from_vm_or_virt_handler_pod(family=IPV6_STR, vm=vm)
     return vm.vmi.virt_launcher_pod.instance.status.podIP
+
+
+def verify_vm_connectivity_over_pod_network(ip_family, src_vm, dst_vm):
+    dst_ip = get_ip_from_vm_or_virt_handler_pod(family=ip_family, vm=dst_vm)
+    assert dst_ip, f"Cannot get valid {ip_family} address from {dst_vm.vmi.name}."
+
+    ping_cmd = f"ping -c 3 {dst_ip}"
+    vm_console_run_commands(vm=src_vm, commands=[ping_cmd])
