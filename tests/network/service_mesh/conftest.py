@@ -32,7 +32,6 @@ from tests.network.utils import (
     FedoraVirtualMachineForServiceMesh,
     ServiceMeshDeployments,
     ServiceMeshDeploymentService,
-    ServiceMeshMemberRollForTests,
     authentication_request,
 )
 from utilities.constants import PORT_80, TIMEOUT_4MIN, TIMEOUT_10SEC
@@ -215,16 +214,9 @@ def httpbin_service_service_mesh(httpbin_deployment_service_mesh, httpbin_servic
 
 
 @pytest.fixture(scope="module")
-def service_mesh_member_roll(service_mesh_tests_namespace):
-    with ServiceMeshMemberRollForTests(members=[service_mesh_tests_namespace.name]) as smmr:
-        yield smmr
-
-
-@pytest.fixture(scope="module")
 def vm_fedora_with_service_mesh_annotation(
     unprivileged_client,
     service_mesh_tests_namespace,
-    service_mesh_member_roll,
 ):
     vm_name = "service-mesh-vm"
     with FedoraVirtualMachineForServiceMesh(
@@ -412,9 +404,9 @@ def change_routing_to_v2(
 
 
 @pytest.fixture(scope="class")
-def peer_authentication_strict_service_mesh(service_mesh_member_roll, service_mesh_tests_namespace):
+def peer_authentication_strict_service_mesh(service_mesh_tests_namespace):
     with PeerAuthenticationForTests(
-        name=service_mesh_member_roll.name,
+        name="default",
         namespace=service_mesh_tests_namespace.name,
     ) as pa:
         yield pa
@@ -424,7 +416,6 @@ def peer_authentication_strict_service_mesh(service_mesh_member_roll, service_me
 def peer_authentication_service_mesh_deployment(
     istio_system_namespace,
     service_mesh_tests_namespace,
-    service_mesh_member_roll,
     vm_fedora_with_service_mesh_annotation,
     ns_outside_of_service_mesh,
     httpbin_service_service_mesh,
