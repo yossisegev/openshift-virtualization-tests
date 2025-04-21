@@ -437,7 +437,7 @@ def vmi_http_server(vm_fedora_with_service_mesh_annotation):
     )
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="module")
 def service_mesh_tests_namespace(namespace, admin_client):
     # The namespace used for the ServiceMesh tests must be added the `istio-injection` label.
     label_project(name=namespace.name, label={"istio-injection": "enabled"}, admin_client=admin_client)
