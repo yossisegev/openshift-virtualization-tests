@@ -174,6 +174,13 @@ def ns_outside_of_service_mesh(admin_client):
     yield from create_ns(admin_client=admin_client, name="outside-mesh")
 
 
+@pytest.fixture(scope="module")
+def service_mesh_tests_namespace(namespace, admin_client):
+    # The namespace used for the ServiceMesh tests must be added the `istio-injection` label.
+    label_project(name=namespace.name, label={"istio-injection": "enabled"}, admin_client=admin_client)
+    return namespace
+
+
 @pytest.fixture(scope="class")
 def httpbin_deployment_service_mesh(service_mesh_tests_namespace):
     with ServiceMeshDeployments(
@@ -415,11 +422,10 @@ def peer_authentication_strict_service_mesh(service_mesh_tests_namespace):
 @pytest.fixture(scope="class")
 def peer_authentication_service_mesh_deployment(
     istio_system_namespace,
-    service_mesh_tests_namespace,
+    peer_authentication_strict_service_mesh,
     vm_fedora_with_service_mesh_annotation,
     ns_outside_of_service_mesh,
     httpbin_service_service_mesh,
-    peer_authentication_strict_service_mesh,
     service_mesh_vm_console_connection_ready,
 ):
     wait_service_mesh_components_convergence(
@@ -435,10 +441,3 @@ def vmi_http_server(vm_fedora_with_service_mesh_annotation):
         vm=vm_fedora_with_service_mesh_annotation,
         commands=[f'while true ; do  echo -e "HTTP/1.1 200 OK\n\n $(date)" | nc -l -p {SERVICE_MESH_PORT}  ; done &'],
     )
-
-
-@pytest.fixture(scope="module")
-def service_mesh_tests_namespace(namespace, admin_client):
-    # The namespace used for the ServiceMesh tests must be added the `istio-injection` label.
-    label_project(name=namespace.name, label={"istio-injection": "enabled"}, admin_client=admin_client)
-    return namespace
