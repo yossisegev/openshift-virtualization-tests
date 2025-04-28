@@ -385,7 +385,6 @@ def test_connectivity_after_migration_and_restart(
 
 
 @pytest.mark.polarion("CNV-2061")
-@pytest.mark.gating
 def test_migration_with_masquerade(
     ip_stack_version_matrix__module__,
     admin_client,
