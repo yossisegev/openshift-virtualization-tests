@@ -97,6 +97,7 @@ def veth_interfaces_exists(worker_node1_pod_executor, remove_veth_bridge_device)
 
 
 @pytest.mark.polarion("CNV-681")
+@pytest.mark.gating
 def test_veth_removed_from_host_after_vm_deleted(
     worker_node1_pod_executor,
     remove_veth_br1test_nad,
