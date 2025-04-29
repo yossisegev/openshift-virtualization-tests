@@ -163,6 +163,7 @@ class NodeNetworkConfigurationPolicy(Nncp):
                     return condition
             if condition["type"] == Resource.Condition.DEGRADED:
                 raise NNCPConfigurationFailed(f"{self.name} failed on condition:\n{condition}")
+        self.logger.info(f"conditions: {conditions}\nstatus.conditions{self.instance.status.conditions}")
         return {}
 
     def _interfaces_for_deletion(self) -> list[Interface]:
