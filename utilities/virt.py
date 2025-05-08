@@ -1582,7 +1582,7 @@ def assert_vm_not_error_status(vm: VirtualMachineForTests) -> None:
     status = vm.instance.get("status")
     printable_status = status.get("printableStatus")
     error_list = VM_ERROR_STATUSES.copy()
-    vm_devices = vm.instance.spec.template.spec.domain.devices
+    vm.instance.spec.template.spec.domain.devices
     error_list.remove(VirtualMachine.Status.ERROR_UNSCHEDULABLE)
     assert printable_status not in error_list, (
         f"VM {vm.name} error printable status: {printable_status}\nVM status:\n{status}"
