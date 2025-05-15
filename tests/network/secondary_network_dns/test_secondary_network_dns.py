@@ -34,7 +34,7 @@ from utilities.network import (
     network_device,
     network_nad,
 )
-from utilities.virt import VirtualMachineForTests, fedora_vm_body, running_vm
+from utilities.virt import VirtualMachineForTests, fedora_vm_body
 
 pytestmark = pytest.mark.usefixtures(
     "enabled_kube_secondary_dns_feature_gate",
