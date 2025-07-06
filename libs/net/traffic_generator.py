@@ -99,13 +99,13 @@ def _is_process_running(vm: BaseVirtualMachine, cmd: str) -> bool:
             wait_timeout=60,
             sleep=5,
             func=vm.console,
-            commands=[f"pgrep -fAx {cmd}"],
+            commands=[f"pgrep -fx '{cmd}'"],
             timeout=_DEFAULT_CMD_TIMEOUT_SEC,
         ):
             if sample:
                 return True
     except TimeoutExpiredError as e:
-        LOGGER.info(f"Process is not running on VM {vm.name}. Error: {str(e.last_exp)}")
+        LOGGER.warning(f"Process is not running on VM {vm.name}. Error: {str(e.last_exp)}")
         return False
 
 
