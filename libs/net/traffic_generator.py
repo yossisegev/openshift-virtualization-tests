@@ -107,7 +107,6 @@ def _is_process_running(vm: BaseVirtualMachine, cmd: str) -> bool:
     except TimeoutExpiredError as e:
         LOGGER.warning(f"Process is not running on VM {vm.name}. Error: {str(e.last_exp)}")
         return False
-    return False
 
 
 def is_tcp_connection(server: Server, client: Client) -> bool:
