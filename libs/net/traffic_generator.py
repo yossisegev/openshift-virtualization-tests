@@ -93,7 +93,9 @@ def _stop_process(vm: BaseVirtualMachine, cmd: str) -> None:
         LOGGER.warning(str(e))
 
 
-def _is_process_running(vm: BaseVirtualMachine, cmd: str) -> bool:
+def _is_process_running(  # type: ignore[return]
+    vm: BaseVirtualMachine, cmd: str
+) -> bool:
     try:
         for sample in TimeoutSampler(
             wait_timeout=60,
