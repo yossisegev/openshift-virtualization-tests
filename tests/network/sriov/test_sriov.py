@@ -16,6 +16,15 @@ LOGGER = logging.getLogger(__name__)
 pytestmark = [pytest.mark.special_infra, pytest.mark.sriov]
 
 
+def assert_similar_interfaces(interface1, interface2):
+    assert (
+        interface1.interfaceName == interface2.interfaceName
+        and interface1.ipAddress == interface2.ipAddress
+        and interface1.mac == interface2.mac
+        and interface1.name == interface2.name
+    ), f"Interfaces mismatch: {interface1} vs. {interface2}"
+
+
 class TestPingConnectivity:
     @pytest.mark.post_upgrade
     @pytest.mark.ipv4
@@ -81,7 +90,10 @@ class TestPingConnectivity:
         restarted_sriov_vm4,
     ):
         # Check only the second interface (SR-IOV interface).
-        assert restarted_sriov_vm4.vmi.interfaces[1] == vm4_interfaces[1]
+        assert_similar_interfaces(
+            interface1=restarted_sriov_vm4.vmi.interfaces[1],
+            interface2=vm4_interfaces[1],
+        )
 
 
 @pytest.mark.special_infra
