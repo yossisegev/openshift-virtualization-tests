@@ -5,6 +5,7 @@ import pexpect
 from timeout_sampler import TimeoutSampler
 
 from utilities.constants import (
+    TIMEOUT_1MIN,
     TIMEOUT_5MIN,
     VIRTCTL,
 )
@@ -55,7 +56,7 @@ class Console(object):
             LOGGER.info(f"{self.vm.name}: Using username {self.username}")
             self.child.sendline(self.username)
             if self.password:
-                self.child.expect("Password:")
+                self.child.expect("Password:", timeout=TIMEOUT_1MIN)
                 LOGGER.info(f"{self.vm.name}: Using password {self.password}")
                 self.child.sendline(self.password)
 
