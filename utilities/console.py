@@ -30,9 +30,8 @@ class Console(object):
                 vmc.expect('some output')
         """
         self.vm = vm
-        # TODO: `BaseVirtualMachine` does not set cloud-init so the VM is using predefined credentials
-        self.username = username or getattr(self.vm, "login_params", {}).get("username") or self.vm.username
-        self.password = password or getattr(self.vm, "login_params", {}).get("password") or self.vm.password
+        self.username = username or self.vm.login_params["username"]
+        self.password = password or self.vm.login_params["password"]
         self.timeout = timeout
         self.child = None
         self.login_prompt = "login:"
