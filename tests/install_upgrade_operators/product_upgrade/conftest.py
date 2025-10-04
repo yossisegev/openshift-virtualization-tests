@@ -18,7 +18,7 @@ from tests.install_upgrade_operators.product_upgrade.utils import (
     get_iib_images_of_cnv_versions,
     get_nodes_labels,
     get_nodes_taints,
-    get_shortest_upgrade_path,
+    get_upgrade_path,
     perform_cnv_upgrade,
     run_ocp_upgrade_command,
     set_workload_update_methods_hco,
@@ -31,7 +31,7 @@ from tests.install_upgrade_operators.product_upgrade.utils import (
 )
 from tests.install_upgrade_operators.utils import wait_for_operator_condition
 from tests.upgrade_params import EUS
-from utilities.constants import HCO_CATALOG_SOURCE, HOTFIX_STR, TIMEOUT_10MIN, NamespacesNames
+from utilities.constants import HCO_CATALOG_SOURCE, HOTFIX_STR, TIMEOUT_10MIN, TIMEOUT_180MIN, NamespacesNames
 from utilities.data_collector import (
     get_data_collector_base_directory,
 )
@@ -317,20 +317,63 @@ def fired_alerts_during_upgrade(fired_alerts_before_upgrade, alert_dir, promethe
 
 
 @pytest.fixture(scope="session")
-def eus_cnv_upgrade_path(eus_target_cnv_version):
-    # Get the shortest path to the target (EUS) version
-    upgrade_path_to_target_version = get_shortest_upgrade_path(target_version=eus_target_cnv_version)
-    # Get the shortest path to the intermediate (non-EUS) version
-    upgrade_path_to_intermediate_version = get_shortest_upgrade_path(
-        target_version=upgrade_path_to_target_version["startVersion"]
+def eus_shortest_upgrade_path_info(eus_target_cnv_version, cnv_current_version):
+    # if cant get from stable - try candidate
+    if upgrade_paths_target_version := get_upgrade_path(target_version=eus_target_cnv_version):
+        target_channel = "stable"
+    else:
+        target_channel = "candidate"
+        upgrade_paths_target_version = get_upgrade_path(target_version=eus_target_cnv_version, channel=target_channel)
+    assert upgrade_paths_target_version, f"Couldn't find upgrade path for {eus_target_cnv_version} version"
+
+    sorted_upgrade_paths = sorted(
+        upgrade_paths_target_version, key=lambda path: Version(version=str(path["startVersion"])), reverse=True
     )
+    for path in sorted_upgrade_paths:
+        if intermediate_upgrade_paths := get_upgrade_path(target_version=path["startVersion"]):
+            if intermediate_path_dict := next(
+                (item for item in intermediate_upgrade_paths if item["startVersion"] == f"v{cnv_current_version}"), None
+            ):
+                return {
+                    "target_versions": path["versions"],
+                    "intermediate_versions": intermediate_path_dict["versions"],
+                    "target_channel": target_channel,
+                }
+    raise AssertionError(f"Couldn't find upgrade path for {eus_target_cnv_version} version from {cnv_current_version}")
+
+
+@pytest.fixture(scope="session")
+def eus_target_channel(eus_shortest_upgrade_path_info):
+    return eus_shortest_upgrade_path_info["target_channel"]
+
+
+@pytest.fixture(scope="session")
+def eus_cnv_upgrade_path(eus_shortest_upgrade_path_info, eus_target_channel):
+    if not (
+        target_paths := get_iib_images_of_cnv_versions(
+            versions=eus_shortest_upgrade_path_info["target_versions"],
+            target_channel=eus_target_channel,
+        )
+    ):
+        target_paths = get_iib_images_of_cnv_versions(
+            versions=eus_shortest_upgrade_path_info["target_versions"],
+            errata_status="false",
+            target_channel=eus_target_channel,
+        )
+    intermediate_paths = get_iib_images_of_cnv_versions(
+        versions=eus_shortest_upgrade_path_info["intermediate_versions"],
+    )
+    assert intermediate_paths, (
+        f"Couldn't find build info for {eus_shortest_upgrade_path_info['intermediate_versions']} versions"
+    )
+
     # Return a dictionary with the versions and images for the EUS-to-EUS upgrade
-    upgrade_path = {
-        "non-eus": get_iib_images_of_cnv_versions(versions=upgrade_path_to_intermediate_version["versions"]),
-        EUS: get_iib_images_of_cnv_versions(versions=upgrade_path_to_target_version["versions"], errata_status="false"),
+    upgrade_path_dict = {
+        EUS: target_paths,
+        "non-eus": intermediate_paths,
     }
-    LOGGER.info(f"Upgrade path for EUS-to-EUS upgrade: {upgrade_path}")
-    return upgrade_path
+    LOGGER.info(f"Upgrade path for EUS-to-EUS upgrade: {upgrade_path_dict}")
+    return upgrade_path_dict
 
 
 @pytest.fixture(scope="session")
@@ -340,10 +383,7 @@ def default_workload_update_strategy(hyperconverged_resource_scope_session):
 
 @pytest.fixture()
 def eus_paused_worker_mcp(
-    workers,
     worker_machine_config_pools,
-    worker_machine_config_pools_conditions,
-    eus_applied_all_icsp,
 ):
     LOGGER.info("Pausing worker MCP updates before starting EUS upgrade.")
     update_mcp_paused_spec(mcp=worker_machine_config_pools)
@@ -362,6 +402,7 @@ def eus_unpaused_worker_mcp(
         machine_config_pools_list=worker_machine_config_pools,
         initial_mcp_conditions=worker_machine_config_pools_conditions,
         nodes=workers,
+        timeout=TIMEOUT_180MIN,
     )
 
 
@@ -488,7 +529,7 @@ def triggered_non_eus_to_target_eus_ocp_upgrade(eus_ocp_image_urls):
 @pytest.fixture()
 def source_eus_to_non_eus_ocp_upgraded(
     admin_client,
-    masters,
+    control_plane_nodes,
     master_machine_config_pools,
     ocp_version_eus_to_non_eus_from_image_url,
     triggered_source_eus_to_non_eus_ocp_upgrade,
@@ -498,14 +539,14 @@ def source_eus_to_non_eus_ocp_upgraded(
         machine_config_pools_list=master_machine_config_pools,
         target_ocp_version=ocp_version_eus_to_non_eus_from_image_url,
         initial_mcp_conditions=get_machine_config_pools_conditions(machine_config_pools=master_machine_config_pools),
-        nodes=masters,
+        nodes=control_plane_nodes,
     )
 
 
 @pytest.fixture()
 def non_eus_to_target_eus_ocp_upgraded(
     admin_client,
-    masters,
+    control_plane_nodes,
     master_machine_config_pools,
     ocp_version_non_eus_to_eus_from_image_url,
     triggered_non_eus_to_target_eus_ocp_upgrade,
@@ -515,7 +556,7 @@ def non_eus_to_target_eus_ocp_upgraded(
         machine_config_pools_list=master_machine_config_pools,
         target_ocp_version=ocp_version_non_eus_to_eus_from_image_url,
         initial_mcp_conditions=get_machine_config_pools_conditions(machine_config_pools=master_machine_config_pools),
-        nodes=masters,
+        nodes=control_plane_nodes,
     )
 
 
@@ -524,6 +565,7 @@ def source_eus_to_non_eus_cnv_upgraded(
     admin_client,
     hco_namespace,
     eus_cnv_upgrade_path,
+    eus_target_channel,
     hyperconverged_resource_scope_function,
     updated_cnv_subscription_source,
 ):
@@ -544,8 +586,10 @@ def non_eus_to_target_eus_cnv_upgraded(
     admin_client,
     hco_namespace,
     eus_cnv_upgrade_path,
+    eus_target_channel,
+    cnv_subscription_scope_session,
+    cnv_registry_source,
     hyperconverged_resource_scope_function,
-    updated_cnv_subscription_source,
 ):
     version, cnv_image = next(iter(eus_cnv_upgrade_path[EUS].items()))
     LOGGER.info(f"Cnv upgrade to version {version} using image: {cnv_image}")
@@ -555,6 +599,9 @@ def non_eus_to_target_eus_cnv_upgraded(
         cr_name=hyperconverged_resource_scope_function.name,
         hco_namespace=hco_namespace,
         cnv_target_version=version.lstrip("v"),
+        subscription=cnv_subscription_scope_session,
+        subscription_source=cnv_registry_source["cnv_subscription_source"],
+        subscription_channel=eus_target_channel,
     )
 
 
