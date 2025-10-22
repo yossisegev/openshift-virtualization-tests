@@ -139,9 +139,7 @@ def _assert_failure_reason_is_bridge_missing(vmi, bridge):
             assert cond.reason == "Unschedulable"
             assert f"Insufficient {bridge.resource_name}" in cond.message
             return
-    pytest.fail(
-        f"VMI {vmi.name} doesn't report {requested_condition}. Reported conditions:{conditions}"
-    )
+    pytest.fail(f"VMI {vmi.name} doesn't report {requested_condition}. Reported conditions:{conditions}")
 
 
 @pytest.mark.sno
