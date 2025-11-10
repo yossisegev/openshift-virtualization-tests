@@ -54,7 +54,7 @@ from packaging.version import Version
 from pyhelper_utils.shell import run_command
 from pytest_testconfig import config as py_config
 from requests import HTTPError, Timeout, TooManyRedirects
-from timeout_sampler import TimeoutExpiredError, TimeoutSampler
+from timeout_sampler import TimeoutExpiredError, TimeoutSampler, retry
 
 import utilities.virt
 from utilities.constants import (
@@ -1061,15 +1061,35 @@ def generate_openshift_pull_secret_file(client: DynamicClient = None) -> str:
     return json_file
 
 
+@retry(
+    wait_timeout=TIMEOUT_30SEC,
+    sleep=TIMEOUT_10SEC,
+    exceptions_dict={RuntimeError: []},
+)
 def get_node_audit_log_entries(log, node, log_entry):
-    return subprocess.getoutput(
+    # Patterns to match errors that should trigger a retry
+    error_patterns_list = [
+        r"^\s*error:",
+        r"Unhandled Error.*couldn't get current server API group list.*i/o timeout",
+    ]
+    error_patterns = re.compile("|".join(f"({pattern})" for pattern in error_patterns_list))
+
+    lines = subprocess.getoutput(
         f"{OC_ADM_LOGS_COMMAND} {node} {AUDIT_LOGS_PATH}/{log} | grep {shlex.quote(log_entry)}"
     ).splitlines()
+    has_errors = any(error_patterns.search(line) for line in lines)
+    if has_errors:
+        if any(line.strip().startswith("404 page not found") for line in lines):
+            LOGGER.warning(f"Skipping {log} check as it was rotated:\n{lines}")
+            return True, []
+        LOGGER.warning(f"oc command failed for node {node}, log {log}:\n{lines}")
+        raise RuntimeError
+    return True, lines
 
 
 def get_node_audit_log_line_dict(logs, node, log_entry):
     for log in logs:
-        deprecated_api_lines = get_node_audit_log_entries(log=log, node=node, log_entry=log_entry)
+        _, deprecated_api_lines = get_node_audit_log_entries(log=log, node=node, log_entry=log_entry)
         if deprecated_api_lines:
             for line in deprecated_api_lines:
                 try:
