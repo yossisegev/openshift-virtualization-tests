@@ -2,8 +2,12 @@ import contextlib
 import logging
 import re
 import time
+from datetime import datetime, timezone
 
 from ocp_resources.resource import ResourceEditor
+from ocp_resources.virtual_machine_instance_migration import (
+    VirtualMachineInstanceMigration,
+)
 from timeout_sampler import TimeoutExpiredError, TimeoutSampler
 
 from libs.net.vmspec import lookup_iface_status, wait_for_missing_iface_status
@@ -17,6 +21,7 @@ from utilities.constants import (
     SRIOV,
     TIMEOUT_1MIN,
     TIMEOUT_2MIN,
+    TIMEOUT_4MIN,
     TIMEOUT_5SEC,
 )
 from utilities.infra import get_pod_by_name_prefix
@@ -26,7 +31,12 @@ from utilities.network import (
     get_vmi_ip_v4_by_name,
     network_device,
 )
-from utilities.virt import VirtualMachineForTests, fedora_vm_body
+from utilities.virt import (
+    VirtualMachineForTests,
+    fedora_vm_body,
+    verify_vm_migrated,
+    wait_for_migration_finished,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -123,7 +133,50 @@ def hot_plug_interface(
         "name": hot_plugged_interface_name,
     })
 
+    # Capture the node before hot-plugging
+    initial_node = vm.vmi.node
+    LOGGER.info(f"VM {vm.name} is currently running on node {initial_node.name}")
+
+    # Get current time to identify new VM-migration objects created after this point
+    time_before_update = datetime.now(timezone.utc)
+
     update_hot_plug_config_in_vm(vm=vm, interfaces=interfaces, networks=networks)
+
+    # Wait for a new VMIM object to appear
+    LOGGER.info(f"Waiting for migration job to be created for VM {vm.name}")
+    vmim = None
+    try:
+        for sample in TimeoutSampler(
+            wait_timeout=120,
+            sleep=5,
+            func=VirtualMachineInstanceMigration.get,
+            namespace=vm.namespace,
+            vmi_name=vm.vmi.name,
+        ):
+            # Filter for VMIM objects created after the hot-plug update
+            for migration in sample:
+                creation_time_str = migration.instance.metadata.creationTimestamp
+                # Parse the timestamp (format: 2024-12-07T12:00:00Z)
+                creation_time = datetime.fromisoformat(creation_time_str.replace("Z", "+00:00"))
+                if creation_time > time_before_update:
+                    vmim = migration
+                    LOGGER.info(f"Found new migration job {vmim.name} for VM {vm.name}")
+                    break
+            if vmim:
+                break
+    except TimeoutExpiredError:
+        LOGGER.error(
+            f"Migration job not created for VM {vm.name} after hot-plugging interface {hot_plugged_interface_name}"
+        )
+        raise
+
+    # Wait for the migration to finish
+    LOGGER.info(f"Waiting for migration {vmim.name} to finish")
+    wait_for_migration_finished(namespace=vm.namespace, migration=vmim, timeout=TIMEOUT_4MIN)
+
+    # Verify the VM migrated successfully
+    LOGGER.info(f"Verifying VM {vm.name} migrated successfully")
+    verify_vm_migrated(vm=vm, node_before=initial_node, wait_for_interfaces=True, check_ssh_connectivity=False)
 
     return lookup_iface_status(
         vm=vm,
