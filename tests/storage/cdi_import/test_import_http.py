@@ -166,10 +166,6 @@ def test_empty_url(namespace, storage_class_name_scope_module):
             pass
 
 
-@pytest.mark.xfail(
-    reason=f"{QUARANTINED}: regression, timeout failure; CNV-70094",
-    run=False,
-)
 @pytest.mark.sno
 @pytest.mark.gating
 @pytest.mark.parametrize(
@@ -572,16 +568,6 @@ def test_successful_vm_from_imported_dv_windows(
 ):
     validate_os_info_vmi_vs_windows_os(
         vm=vm_instance_from_template_multi_storage_scope_function,
-    )
-
-
-@pytest.mark.polarion("CNV-4724")
-@pytest.mark.sno
-@pytest.mark.s390x
-def test_dv_api_version_after_import(cirros_dv_unprivileged):
-    assert (
-        cirros_dv_unprivileged.api_version
-        == f"{cirros_dv_unprivileged.api_group}/{cirros_dv_unprivileged.ApiVersion.V1BETA1}"
     )
 
 

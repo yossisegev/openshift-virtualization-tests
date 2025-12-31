@@ -24,7 +24,7 @@ from tests.install_upgrade_operators.utils import (
 )
 from utilities.constants import CDI_KUBEVIRT_HYPERCONVERGED, KUBEVIRT_HCO_NAME
 
-pytestmark = [pytest.mark.post_upgrade, pytest.mark.sno, pytest.mark.s390x]
+pytestmark = [pytest.mark.post_upgrade, pytest.mark.sno, pytest.mark.s390x, pytest.mark.skip_must_gather_collection]
 
 LOGGER = logging.getLogger(__name__)
 
@@ -82,8 +82,7 @@ def test_default_featuregates_by_resource(
     expected,
     resource_object_value_by_key,
 ):
+    if isinstance(resource_object_value_by_key, list):
+        resource_object_value_by_key = set(resource_object_value_by_key)
     error_message = f"Expected featuregates: {expected}, actual: {resource_object_value_by_key}"
-    if isinstance(expected, list):
-        assert sorted(expected) == sorted(resource_object_value_by_key), error_message
-    else:
-        assert expected == resource_object_value_by_key, error_message
+    assert expected == resource_object_value_by_key, error_message

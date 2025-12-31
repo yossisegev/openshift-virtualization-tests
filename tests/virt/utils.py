@@ -58,7 +58,7 @@ from utilities.virt import (
     get_vm_boot_time,
     kill_processes_by_name_linux,
     migrate_vm_and_verify,
-    pause_optional_migrate_unpause_and_check_connectivity,
+    pause_unpause_vm_and_check_connectivity,
     start_and_fetch_processid_on_linux_vm,
     start_and_fetch_processid_on_windows_vm,
     verify_vm_migrated,
@@ -283,11 +283,11 @@ def kill_processes_by_name_windows(vm, process_name):
     run_ssh_commands(host=vm.ssh_exec, commands=cmd, tcp_timeout=TCP_TIMEOUT_30SEC)
 
 
-def validate_pause_optional_migrate_unpause_windows_vm(vm, pre_pause_pid=None, migrate=False):
+def validate_pause_unpause_windows_vm(vm: VirtualMachineForTests, pre_pause_pid: int | None = None) -> None:
     proc_name = OS_PROC_NAME["windows"]
     if not pre_pause_pid:
         pre_pause_pid = start_and_fetch_processid_on_windows_vm(vm=vm, process_name=proc_name)
-    pause_optional_migrate_unpause_and_check_connectivity(vm=vm, migrate=migrate)
+    pause_unpause_vm_and_check_connectivity(vm=vm)
     post_pause_pid = fetch_pid_from_windows_vm(vm=vm, process_name=proc_name)
     kill_processes_by_name_windows(vm=vm, process_name=proc_name)
     assert post_pause_pid == pre_pause_pid, (
@@ -543,3 +543,18 @@ def get_data_volume_template_dict_with_default_storage_class(data_source: DataSo
         py_config["default_storage_class_configuration"]["access_mode"]
     ]
     return data_volume_template
+
+
+def update_hco_memory_overcommit(hco, percentage):
+    with ResourceEditorValidateHCOReconcile(
+        patches={
+            hco: {
+                "spec": {
+                    "higherWorkloadDensity": {"memoryOvercommitPercentage": percentage},
+                }
+            }
+        },
+        list_resource_reconcile=[KubeVirt],
+        wait_for_reconcile_post_update=True,
+    ):
+        yield
