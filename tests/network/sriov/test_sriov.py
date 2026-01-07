@@ -18,7 +18,6 @@ pytestmark = [pytest.mark.special_infra, pytest.mark.sriov]
 
 
 class TestPingConnectivity:
-    @pytest.mark.post_upgrade
     @pytest.mark.ipv4
     @pytest.mark.polarion("CNV-3963")
     def test_sriov_basic_connectivity(
@@ -73,7 +72,6 @@ class TestPingConnectivity:
             dst_ip=lookup_iface_status_ip(vm=sriov_vm4, iface_name=sriov_network_vlan.name, ip_family=4),
         )
 
-    @pytest.mark.post_upgrade
     @pytest.mark.polarion("CNV-4768")
     def test_sriov_interfaces_post_reboot(
         self,
