@@ -364,7 +364,7 @@ def migrated_localnet_vm(
     return vm
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="package")
 def nncp_localnet_on_secondary_node_nic(
     nmstate_dependent_placeholder: None,
     admin_client: DynamicClient,
