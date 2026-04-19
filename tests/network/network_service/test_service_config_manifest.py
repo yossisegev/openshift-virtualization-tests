@@ -10,7 +10,7 @@ class TestServiceConfigurationViaManifest:
         "single_stack_service_ip_family, single_stack_service",
         [
             pytest.param(
-                "IPv4", "IPv4", marks=[pytest.mark.ipv4, pytest.mark.multiarch, pytest.mark.polarion("CNV-5789")]
+                "IPv4", "IPv4", marks=[pytest.mark.ipv4, pytest.mark.ma_sanity, pytest.mark.polarion("CNV-5789")]
             ),
             pytest.param("IPv6", "IPv6", marks=[pytest.mark.ipv6, pytest.mark.polarion("CNV-12557")]),
         ],
@@ -32,7 +32,7 @@ class TestServiceConfigurationViaManifest:
 
     @pytest.mark.polarion("CNV-5831")
     @pytest.mark.single_nic
-    @pytest.mark.multiarch
+    @pytest.mark.ma_sanity
     @pytest.mark.usefixtures("default_ip_family_policy_service")
     def test_service_with_default_ip_family_policy(
         self,

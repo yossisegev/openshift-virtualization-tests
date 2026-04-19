@@ -12,7 +12,7 @@ pytestmark = pytest.mark.service_mesh
 
 
 @pytest.mark.s390x
-@pytest.mark.multiarch
+@pytest.mark.ma_sanity
 @pytest.mark.single_nic
 class TestSMTrafficManagement:
     @pytest.mark.polarion("CNV-5782")
@@ -48,7 +48,7 @@ class TestSMTrafficManagement:
 
 
 @pytest.mark.s390x
-@pytest.mark.multiarch
+@pytest.mark.ma_sanity
 @pytest.mark.single_nic
 class TestSMPeerAuthentication:
     @pytest.mark.ipv4

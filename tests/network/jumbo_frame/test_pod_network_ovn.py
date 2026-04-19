@@ -14,7 +14,7 @@ pytestmark = [
 ]
 
 
-@pytest.mark.multiarch
+@pytest.mark.ma_sanity
 @pytest.mark.single_nic
 class TestJumboPodNetworkOnly:
     @pytest.mark.ipv4
