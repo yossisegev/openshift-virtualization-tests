@@ -90,7 +90,11 @@ def nodes_active_nics(
                 LOGGER.warning(f"{node.name} {iface_name} link is down (response: {carrier_response})")
                 continue
 
-            if node_iface.get("ipv4", {}).get("address"):
+            if ipv4_addresses := node_iface.get("ipv4", {}).get("address"):
+                LOGGER.warning(
+                    f"{node.name}:{iface_name} is already configured with IP addresses ({ipv4_addresses}) - "
+                    f"adding it to the node's occupied interfaces list."
+                )
                 nodes_nics[node.name]["occupied"].append(iface_name)
             else:
                 nodes_nics[node.name]["available"].append(iface_name)
